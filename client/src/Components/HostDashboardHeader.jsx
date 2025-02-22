@@ -38,7 +38,7 @@ function HostDashboardHeader(props) {
   };
 
   return (
-    <header className="bg-white shadow-md p-4 flex justify-between items-center">
+    <header className="bg-white shadow-md p-4 flex justify-between items-center px-16">
       <h1 className="text-xl font-bold text-gray-800">Host Dashboard</h1>
       <div className="flex space-x-4 relative">
         {/* Profile Icon */}

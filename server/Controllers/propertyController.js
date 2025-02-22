@@ -1,4 +1,7 @@
-const Property = require("../Models/property")
+// const Property = require("../Models/property")
+// const Booking = require("../Models/booking")
+const { Property, Booking } = require("../Models/index");
+
 
 module.exports.createProperty = async (req, res) => {
     try {
@@ -15,7 +18,7 @@ module.exports.createProperty = async (req, res) => {
             description,
             pricePerNight,
             location,
-            hostId, 
+            hostId,
             image
         });
 
@@ -35,23 +38,43 @@ module.exports.createProperty = async (req, res) => {
 
 module.exports.getSpecificProperty = async (req, res) => {
     try {
-        // Extract user ID and property data
-        const hostId = req.user.id;
+        if (req.params.id) {
+            // Extract user ID and property data
+            const propertyId = req.params.id;
 
-        // Find all properties where the logged-in user is the host
-        const hostProperties = await Property.findAll({
-            where: { hostId }
-        });
+            // Find all properties where the logged-in user is the host
+            const hostProperties = await Property.findOne({
+                where: { id: propertyId }
+            });
 
-        // If no properties found, return a message
-        if (hostProperties.length === 0) {
-            return res.status(404).json({ message: "No properties found for this host." });
+            // If not found, return a message
+            if (!hostProperties) {
+                return res.status(404).json({ message: "No property found for this host." });
+            }
+            // Respond with the list of properties
+            return res.status(200).json({
+                message: "Property retrieved successfully",
+                property: hostProperties,
+            });
+        } else {
+            // Extract user ID and property data
+            const hostId = req.user.id;
+
+            // Find all properties where the logged-in user is the host
+            const hostProperties = await Property.findAll({
+                where: { hostId }
+            });
+
+            // If no properties found, return a message
+            if (hostProperties.length === 0) {
+                return res.status(404).json({ message: "No properties found for this host." });
+            }
+            // Respond with the list of properties
+            return res.status(200).json({
+                message: "Properties retrieved successfully",
+                properties: hostProperties,
+            });
         }
-        // Respond with the list of properties
-        return res.status(200).json({
-            message: "Properties retrieved successfully",
-            properties: hostProperties,
-        });
     } catch (error) {
         console.error("Error retrieving properties:", error);
         return res.status(500).json({ error: "Internal server error, not able to read properties" });
@@ -67,7 +90,7 @@ module.exports.getAllProperty = async (req, res) => {
 
         // Find all properties where the logged-in user is the host
         const hostProperties = await Property.findAll({
-            where: { isDeleted:false }
+            where: { isDeleted: false }
         });
 
         // If no properties found, return a message
@@ -91,7 +114,7 @@ module.exports.updateProperty = async (req, res) => {
         // Extract user ID and property ID from the request
         const hostId = req.user.id;
         const propertyId = req.body.postId;
-        
+
         // Extract updated property data from the request body
         const { title, description, pricePerNight, location } = req.body;
 
@@ -193,3 +216,118 @@ module.exports.deletePropertySoft = async (req, res) => {
     }
 };
 
+module.exports.bookProperty = async (req, res) => {
+    try {
+        // Log the incoming user and data
+        console.log("user", req.user, "data", req.body);
+        // console.log("user", req.user.id, "data", req.body);
+
+        // Extract user ID and property data
+        const renterId = req.user.id;
+        const { checkIn, checkOut, propertyId } = req.body;
+
+        // Create the new property in the database
+        const newProperty = await Booking.create({
+            checkInDate: checkIn,
+            checkOutDate: checkOut,
+            renterId: renterId,
+            propertyId: propertyId,
+        });
+
+        // Respond with the newly created booking
+        return res.status(201).json({
+            message: "Property added successfully",
+            property: newProperty,
+        });
+    } catch (error) {
+        console.error("Error booking:", error.message);
+        return res.status(500).json({
+            message: "Failed to book Property",
+            error: error.message,
+        });
+    }
+};
+
+// find all user/renter bookings
+
+
+module.exports.getallbookings = async (req, res) => {
+
+    try {
+        // Extract user ID and booking data
+        const userId = req.user.id
+        const userBookings = await Booking.findAll({
+            where: { renterId: userId },
+            include: [
+                {
+                    model: Property, // Include the Property model
+                    attributes: ["image", "title", "description"], // Fetch only these fields
+                    as: "Property", // Use the same alias as defined in the association
+                },
+            ],
+        });
+
+        // Extract relevant data
+        const bookingsWithPropertyDetails = userBookings.map((booking) => ({
+            id: booking.dataValues.id,
+            status: booking.dataValues.status,
+            // checkInDate: booking.dataValues.checkInDate,
+            // checkOutDate: booking.dataValues.checkOutDate,
+            property: {
+                image: booking.Property.image,
+                title: booking.Property.title,
+                description: booking.Property.description,
+            },
+        }));
+
+        // console.log(bookingsWithPropertyDetails);
+
+
+        // If no bookings found, return a message
+        if (!userBookings ) {
+            return res.status(404).json({ message: "No bookings found ." });
+        }
+        // Respond with the list of bookings
+        return res.status(200).json({
+            message: "Bookings retrieved successfully",
+            bookings: bookingsWithPropertyDetails,
+        });
+    } catch (error) {
+        console.error("Error retrieving bookings:", error);
+        return res.status(500).json({ error: "Internal server error, not able to read bookings" });
+    }
+};
+
+
+
+module.exports.getDateRange = async (req, res) => {
+    try {
+        if (req.params.id) {
+            // Extract user ID and property data
+            const propertyId = req.params.id;
+
+            // Find all bookings with the specific propertyId
+            const bookedDetials = await Booking.findOne({
+                where: { propertyId }
+            });
+            console.log(bookedDetials);
+            bookedDetials.map((details)=>{
+            checkInDate: details.dataValues.checkInDate,
+            checkOutDate: details.dataValues.checkOutDate,
+            })
+            
+            // // If not found, return a message
+            // if (!bookedDetials) {
+            //     return res.status(404).json({ message: "No Booking for this property." });
+            // }
+            // // Respond with the list of properties
+            // return res.status(200).json({
+            //     message: "Property retrieved successfully",
+            //     property: hostProperties,
+            // });
+        } 
+    } catch (error) {
+        console.error("Error retrieving properties:", error);
+        return res.status(500).json({ error: "Internal server error, not able to read properties" });
+    }
+};

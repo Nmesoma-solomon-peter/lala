@@ -23,7 +23,7 @@ function HostSidebar() {
                             </Link>
                         </li>
                         <li>
-                            <a href="/dashboard/bookings" className="block py-3 px-6 hover:bg-gray-700 rounded-md text-lg">
+                            <a href="/dashboard/hostpropertiesbooked" className="block py-3 px-6 hover:bg-gray-700 rounded-md text-lg">
                                 Bookings
                             </a>
                         </li>

@@ -10,6 +10,7 @@ function PropertyInfoInner() {
     const [selectedCheckin, setSelectedCheckin] = useState(null);
     const [selectedCheckout, setSelectedCheckout] = useState(null);
     const [propertyInfo, setPropertyInfo] = useState({});
+    const [datesToDisable, setDatesToDisable] = useState([])
     const minDate = new Date();
 
     // Use useSearchParams to access query parameters
@@ -36,20 +37,47 @@ function PropertyInfoInner() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const formData = {"checkIn":selectedCheckin, "checkOut":selectedCheckout,"propertyId":id}
+        const formData = { "checkIn": selectedCheckin, "checkOut": selectedCheckout, "propertyId": id }
         axios.post('http://localhost:5000/property/bookproperty', formData)
             .then((response) => {
                 console.log("Response data:", response.status);
-                    //navigate to view properties
-                    navigate("/dashboard/viewlistings");
+                //navigate to view properties
+                navigate("/bookings");
             })
             .catch((error) => {
                 console.error("Error:", error.response ? error.response.data : error.message);
-                if(error.status === 401){
+                if(error.status === 400){
+                    alert("The selected dates overlap with an existing booking.")
+                }
+                if (error.status === 401) {
                     navigate("/login")
                 }
-            });        
+            });
     };
+
+    useEffect(() => {
+        axios
+            .get(`http://localhost:5000/property/getdaterange/${id}`, {
+                withCredentials: true, // Include credentials (cookies)
+            })
+            .then((response) => {
+                // setPropertyInfo(response.data.property);
+                // response.data.Dates.map((dates)=>{setDatesToDisable(dates)})
+                setDatesToDisable(response.data.Dates)
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                if (error.response?.status === 401) {
+                    navigate('/login');
+                }
+            });
+    }, [id]);
+    // console.log(datesToDisable);
+    // date ranges to be disabled
+    const disabledDateRanges = datesToDisable
+    // console.log("dd",disabledDateRanges );
+    
+
 
     return (
         <div className="container mx-auto px-48 pb-40">
@@ -113,6 +141,7 @@ function PropertyInfoInner() {
                                     onChange={(date) => setSelectedCheckin(date)}
                                     minDate={minDate}
                                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                    excludeDateIntervals={disabledDateRanges}
                                 />
                             </div>
                             <div className="w-full sm:w-1/2">
@@ -125,6 +154,8 @@ function PropertyInfoInner() {
                                     minDate={selectedCheckin}
                                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
                                     disabled={selectedCheckin == null}
+                                    excludeDateIntervals={disabledDateRanges}
+
                                 />
                             </div>
                         </div>

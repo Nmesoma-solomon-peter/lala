@@ -6,6 +6,7 @@ import AddNewProperty from './AddNewProperty'
 import HostDashInner from './HostDashInner'
 import ViewListings from './ViewListings'
 import UpdateProperty from './updateProperty'
+import HostPropBooked from './HostPropBooked'
 import { useState } from 'react'
 
 function HostDashboard(props) {
@@ -31,6 +32,7 @@ function HostDashboard(props) {
                                 <Route path="addproperty" element={<AddNewProperty />} />
                                 <Route path="viewlistings" element={<ViewListings setPostDetails={setPostDetails}/>} />
                                 <Route path="updateproperty" element={<UpdateProperty postDetails={postDetails}/>} />
+                                <Route path="hostpropertiesbooked" element={<HostPropBooked/>} />
                             </Route>
                         </Routes>
                         
